@@ -22,26 +22,22 @@ class _BerandaPageState extends State<BerandaPage> {
       List<List<dynamic>> rows = <List<dynamic>>[];
       var i=1;
       var k=0;
-      // List<List<dynamic>> rows_gyro = <List<dynamic>>[];
-      // List<List<dynamic>> gabungan = <List<dynamic>>[];
-      //Optional for CSV Validation
-      List<dynamic> AccelHeader = ['index','Gyro_x', 'Gyro_y', 'Gyro_z'];
-      // List<dynamic> gyroHeader = ['Gyro_x', 'Gyro_y', 'Gyro_z'];
-      rows.add(AccelHeader);
-      // rows_gyro.add(gyroHeader);
+      List<List<dynamic>> gabungan = <List<dynamic>>[];
+      List<dynamic> allHeader = ['Accelero_x', 'Accelero_y', 'Accelero_z','Gyro_x', 'Gyro_y', 'Gyro_z'];
+      rows.add(allHeader);
       accelerometerEvents.listen((AccelerometerEvent event) {
         setState(() {
           x = event.x;
           y = event.y;
           z = event.z;
         });
-        // List<dynamic> row = [];
-        // row.add(k);
-        // row.add(event.x);
-        // row.add(event.y);
-        // row.add(event.z);
-        // rows.add(row);
-        // k++;
+        List<dynamic> row = [];
+        row.add(k);
+        row.add(event.x);
+        row.add(event.y);
+        row.add(event.z);
+        rows.add(row);
+        k++;
       });
       gyroscopeEvents.listen((GyroscopeEvent event) {
         setState(() {
@@ -56,22 +52,22 @@ class _BerandaPageState extends State<BerandaPage> {
         row.add(event.z);
         rows.add(row);
         k++;
-        // if(i>rows.length-1){
-        //   List<dynamic> row = [];
-        //   row.add(i);
-        //   row.add('');
-        //   row.add('');
-        //   row.add('');
-        //   row.add(event.x);
-        //   row.add(event.y);
-        //   row.add(event.z);
-        //   rows.add(row);
-        // } else {
-        //   rows[i].add(event.x);
-        //   rows[i].add(event.y);
-        //   rows[i].add(event.z);
-        // }
-        // i++;
+        if(i>rows.length-1){
+          List<dynamic> row = [];
+          row.add(i);
+          row.add('');
+          row.add('');
+          row.add('');
+          row.add(event.x);
+          row.add(event.y);
+          row.add(event.z);
+          rows.add(row);
+        } else {
+          rows[i].add(event.x);
+          rows[i].add(event.y);
+          rows[i].add(event.z);
+        }
+        i++;
       });
       await SimplePermissions.requestPermission(Permission. WriteExternalStorage);
       bool checkPermission=await SimplePermissions.checkPermission(Permission.WriteExternalStorage);
