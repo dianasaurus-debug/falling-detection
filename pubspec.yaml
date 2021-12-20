@@ -31,11 +31,14 @@ dependencies:
   sensors: ^2.0.3
   csv: ^5.0.0
   path_provider: ^2.0.4
-  simple_permissions:
-    git:
-      url: https://github.com/tq-systems/simple_permissions.git
   google_maps_flutter: ^2.0.9
   flutter_background_service: ^0.1.5
+  flutter_sensors: ^0.1.6
+  http: ^0.13.3
+  firebase_core: ^1.1.0
+  firebase_messaging: ^10.0.0
+  overlay_support: ^1.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

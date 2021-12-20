@@ -1,6 +1,7 @@
 import 'package:fall_detection_v2/login.dart';
 import 'package:fall_detection_v2/register.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 class IndexUnauthenticated extends StatelessWidget {
   final ButtonStyle styleButtonIndex = ElevatedButton.styleFrom(
@@ -38,31 +39,43 @@ class IndexUnauthenticated extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton(
-                        style : styleButtonIndex,
-                        onPressed: () {
-                          Route route = MaterialPageRoute(
-                              builder: (context) => Login());
-                          Navigator.push(context, route);
+                        child: Text('Stop Service'),
+                        onPressed: () async {
+                          var isRunning =
+                          await FlutterBackgroundService().isServiceRunning();
+                          if (isRunning) {
+                            FlutterBackgroundService().sendData(
+                              {"action": "stopService"},
+                            );
+                          }
                         },
-                        child: const Text('LOGIN', style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Colors.white,
-                            fontFamily: 'Roboto')),
                       ),
-                      ElevatedButton(
-                        style : styleButtonIndex,
-                        onPressed: () {
-                          Route route = MaterialPageRoute(
-                              builder: (context) => Register());
-                          Navigator.push(context, route);
-                        },
-                        child: const Text('REGISTER', style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Colors.white,
-                            fontFamily: 'Roboto')),
-                      ),
+                      // ElevatedButton(
+                      //   style : styleButtonIndex,
+                      //   onPressed: () {
+                      //     Route route = MaterialPageRoute(
+                      //         builder: (context) => Login());
+                      //     Navigator.push(context, route);
+                      //   },
+                      //   child: const Text('LOGIN', style: TextStyle(
+                      //       fontWeight: FontWeight.bold,
+                      //       fontSize: 15,
+                      //       color: Colors.white,
+                      //       fontFamily: 'Roboto')),
+                      // ),
+                      // ElevatedButton(
+                      //   style : styleButtonIndex,
+                      //   onPressed: () {
+                      //     Route route = MaterialPageRoute(
+                      //         builder: (context) => Register());
+                      //     Navigator.push(context, route);
+                      //   },
+                      //   child: const Text('REGISTER', style: TextStyle(
+                      //       fontWeight: FontWeight.bold,
+                      //       fontSize: 15,
+                      //       color: Colors.white,
+                      //       fontFamily: 'Roboto')),
+                      // ),
                     ],
                   ),
                 )

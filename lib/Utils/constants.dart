@@ -1,0 +1,3 @@
+const EXCEL_ALL_FILES_ACCELEROMETER = 'https://script.google.com/macros/s/AKfycbxlCUjHunFTiELxP6FAOS5YGFyZeo2ONoolshqfWDZ7U8FKdjUuthz7cW-n1rUI4P4CVg/exec';
+const LOW_THRESHOLD_ACCELEROMETER = 8.4;
+const HIGH_THRESHOLD_ACCELEROMETER = 17.3;

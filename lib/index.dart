@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sensors/sensors.dart';
-import 'package:simple_permissions/simple_permissions.dart';
 
 class IndexPage extends StatefulWidget {
   @override
@@ -63,23 +62,7 @@ class _IndexPageState extends State<IndexPage> {
         }
         i++;
       });
-      await SimplePermissions.requestPermission(Permission. WriteExternalStorage);
-      bool checkPermission=await SimplePermissions.checkPermission(Permission.WriteExternalStorage);
-      if(checkPermission) {
 
-//store file in documents folder
-
-        String dir = (await getExternalStorageDirectory())!.absolute.path + "/documents";
-        var file = "$dir";
-        print(" FILE " + file);
-        File f = new File(file+"_datasample.csv");
-        // gabungan.add(rows);
-        // gabungan.add(rows_gyro);
-// convert rows to String and write as csv file
-        String csv1 = const ListToCsvConverter().convert(rows);
-
-        f.writeAsString(csv1);
-      }
     }
     super.initState();
       getCsv();
