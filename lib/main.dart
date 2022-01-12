@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert' as convert;
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:fall_detection_v2/Models/accelerometer.dart';
 import 'package:fall_detection_v2/Models/gyrometer.dart';
+import 'package:fall_detection_v2/beranda.dart';
 import 'package:fall_detection_v2/detect_falls.dart';
 import 'package:fall_detection_v2/splash_screen_view.dart';
 import 'package:fall_detection_v2/testing_sensor.dart';
@@ -13,23 +15,25 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:sensors/sensors.dart';
 import 'package:http/http.dart' as http;
 
+import 'Utils/constants.dart';
+
 // @dart=2.9
 void main() async {
-  // WidgetsFlutterBinding.ensureInitialized();
-  // FlutterBackgroundService.initialize(onStart);
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterBackgroundService.initialize(onStart);
   await Firebase.initializeApp();
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     title: 'Splash Screen',
-    home: DetectFalls(),
+    home: SplashScreenPage(),
   ));
 }
+
 void onStart() {
   WidgetsFlutterBinding.ensureInitialized();
   final service = FlutterBackgroundService();
   List<List<dynamic>> rows = <List<dynamic>>[];
-  const String URL = "https://script.google.com/macros/s/AKfycbyANfT3HN5lIDw44QYWvdGvqDS8j-vk0H2S56rSbpWtqnFduy8CgM3LrsftDk-1va38/exec";
+  const String URL = "https://script.google.com/macros/s/AKfycbzge5uO8rlaDrSHAxXd3qUTPtbAYiykh3XTO0n_yDVW86igQHn731NfgoVu4ujz01qK/exec";
   const STATUS_SUCCESS = "SUCCESS";
   void submitForm(
       List<Accelerometer> accelerometer, List<Gyrometer> gyrometer, void Function(String) callback) async {
@@ -76,29 +80,19 @@ void onStart() {
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   if (_streamSubscriptions.length==0) {
     _streamSubscriptions.add(accelerometerEvents.listen((AccelerometerEvent event) {
-      service.setNotificationInfo(
-        title: "Tes background app",
-        content: "i = $i x = ${event.x}, y = ${event.y}, z = ${event.z}",
-      );
-      print("Accel : i = $i. x = ${event.x}, y = ${event.y}, z = ${event.z}");
       service.sendData(
-        {"accel_i": accelerometer.length.toString(),
+        {
+          "accel_i": accelerometer.length.toString(),
           "acc_x" : event.x,
           "acc_y" : event.y,
           "acc_z" : event.z,
         }
       );
       accelerometer.add(new Accelerometer(event.x.toString(), event.y.toString(), event.z.toString()));
-
       i++;
     })
     );
     _streamSubscriptions.add(gyroscopeEvents.listen((GyroscopeEvent event) {
-      service.setNotificationInfo(
-        title: "Tes background app",
-        content: "Gyro : i = $k x = ${event.x}, y = ${event.y}, z = ${event.z}",
-      );
-      print("Gyro : i = $k. x = ${event.x}, y = ${event.y}, z = ${event.z}");
       service.sendData(
           {"gyro_i": accelerometer.length.toString(),
             "gyro_x" : event.x,
@@ -109,7 +103,6 @@ void onStart() {
       gyroscope.add(new Gyrometer(event.x.toString(), event.y.toString(), event.z.toString()));
       k++;
     }));
-
   }
   service.onDataReceived.listen((event) {
     if (event!["action"] == "stopService") {
@@ -124,7 +117,7 @@ void onStart() {
       }
       // service.stopBackgroundService();
     } else if(event!["action"] == "restartService"){
-      // FlutterBackgroundService.initialize(onStart);
+      FlutterBackgroundService.initialize(onStart);
       print('restarted');
       i=0;
       k=0;

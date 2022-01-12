@@ -84,7 +84,7 @@ class _DetectFallsState extends State<DetectFalls> {
                           }
                         },
                       ),
-            )
+          )
 
 
     );

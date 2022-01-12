@@ -12,66 +12,10 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
-  double x=0, y=0, z=0;
-  double gx=0, gy=0, gz=0;
   @override
   void initState() {
     // TODO: implement initState
-    getCsv() async {
-      List<List<dynamic>> rows = <List<dynamic>>[];
-      var i=1;
-      var k=0;
-      List<List<dynamic>> gabungan = <List<dynamic>>[];
-      List<dynamic> allHeader = ['Accelero_x', 'Accelero_y', 'Accelero_z','Gyro_x', 'Gyro_y', 'Gyro_z'];
-      rows.add(allHeader);
-      accelerometerEvents.listen((AccelerometerEvent event) {
-        setState(() {
-          x = event.x;
-          y = event.y;
-          z = event.z;
-        });
-        List<dynamic> row = [];
-        row.add(k);
-        row.add(event.x);
-        row.add(event.y);
-        row.add(event.z);
-        rows.add(row);
-        k++;
-      });
-      gyroscopeEvents.listen((GyroscopeEvent event) {
-        setState(() {
-          gx = event.x;
-          gy = event.y;
-          gz = event.z;
-        });
-        List<dynamic> row = [];
-        row.add(k);
-        row.add(event.x);
-        row.add(event.y);
-        row.add(event.z);
-        rows.add(row);
-        k++;
-        if(i>rows.length-1){
-          List<dynamic> row = [];
-          row.add(i);
-          row.add('');
-          row.add('');
-          row.add('');
-          row.add(event.x);
-          row.add(event.y);
-          row.add(event.z);
-          rows.add(row);
-        } else {
-          rows[i].add(event.x);
-          rows[i].add(event.y);
-          rows[i].add(event.z);
-        }
-        i++;
-      });
 
-    }
-    super.initState();
-    getCsv();
   }
 
   Widget build(BuildContext context) {
@@ -285,44 +229,6 @@ class _BerandaPageState extends State<BerandaPage> {
                       ]
                   ),
                   SizedBox(height: 10),
-                  Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children :[
-                        Text('Accelerometer', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 13),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Text('x : ' + x.toStringAsFixed(2),   //trim the asis value to 2 digit after decimal point
-                                  style: TextStyle(fontSize: 15)),
-                              Text('y : ' + y.toStringAsFixed(2),   //trim the asis value to 2 digit after decimal point
-                                  style: TextStyle(fontSize: 15)),
-                              Text('z : ' + z.toStringAsFixed(2),   //trim the asis value to 2 digit after decimal point
-                                  style: TextStyle(fontSize: 15)),
-                            ],
-                        )
-                      ]
-                  ),
-                  SizedBox(height: 10),
-                  Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children :[
-                        Text('Gyroscope', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 13),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Text('x : ' + gx.toStringAsFixed(2),   //trim the asis value to 2 digit after decimal point
-                                style: TextStyle(fontSize: 15)),
-                            Text('y : ' + gy.toStringAsFixed(2),   //trim the asis value to 2 digit after decimal point
-                                style: TextStyle(fontSize: 15)),
-                            Text('z : ' + gz.toStringAsFixed(2),   //trim the asis value to 2 digit after decimal point
-                                style: TextStyle(fontSize: 15)),
-                          ],
-                        )
-                      ]
-                  ),
-
                 ])
         )
     );
