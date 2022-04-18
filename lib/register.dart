@@ -1,8 +1,11 @@
 import 'dart:convert';
 
+import 'package:fall_detection_v2/Controllers/auth_controller.dart';
 import 'package:fall_detection_v2/beranda.dart';
+import 'package:fall_detection_v2/beranda_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 // Define a custom Form widget.
 class Register extends StatefulWidget {
@@ -22,6 +25,12 @@ class RegisterState extends State<Register> {
   // not a GlobalKey<LoginState>.
   var email;
   var password;
+  var tb;
+  var bb;
+  var usia;
+  var gender;
+  var phone;
+  var name;
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -165,6 +174,71 @@ class RegisterState extends State<Register> {
                             },
                           ),
                           const SizedBox(height: 15),
+                          Row(
+                            children : [
+                              TextFormField(
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                        color: Colors.lightBlueAccent, width: 2),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide:
+                                    BorderSide(color: Color(0xff000000), width: 2),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 2),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 2),
+                                  ),
+                                  hintText: 'Tinggi badan',
+                                ),
+                                // The validator receives the text that the user has entered.
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Field tidak boleh kosong';
+                                  }
+                                  tb = value;
+                                  return null;
+                                },
+                              ),
+                              TextFormField(
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                        color: Colors.lightBlueAccent, width: 2),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide:
+                                    BorderSide(color: Color(0xff000000), width: 2),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 2),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 2),
+                                  ),
+                                  hintText: 'Berat badan',
+                                ),
+                                // The validator receives the text that the user has entered.
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Field tidak boleh kosong';
+                                  }
+                                  bb = value;
+                                  return null;
+                                },
+                              ),
+                            ]
+                          ),
+                          const SizedBox(height: 15),
                           TextFormField(
                             keyboardType: TextInputType.text,
                             maxLines: 3,
@@ -225,4 +299,45 @@ class RegisterState extends State<Register> {
 
     );
   }
+  void _register() async{
+    setState(() {
+      _isLoading = true;
+    });
+    var  data = {
+      'email' : email, 'name' : name, 'usia' : usia, 'tb' : tb, 'bb' : bb, 'gender' : gender, 'password' : password, 'phone' : phone
+    };
+
+    var res = await AuthController().authData(data, '/register');
+    var body = json.decode(res.body);
+    if(body['success']){
+      Navigator.push(
+        context,
+        new MaterialPageRoute(
+            builder: (context) => BerandaPage()
+        ),
+      );
+    }else{
+      Alert(
+        context: context,
+        type: AlertType.error,
+        title: "Gagal Daftar!",
+        desc: body['message'],
+        buttons: [
+          DialogButton(
+            child: const Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.pop(context),
+            width: 120,
+          )
+        ],
+      ).show();
+    }
+    setState(() {
+      _isLoading = false;
+    });
+
+  }
+
 }

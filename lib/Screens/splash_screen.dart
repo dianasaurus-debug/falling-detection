@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:fall_detection_v2/Screens/beranda.dart';
 import 'package:fall_detection_v2/Screens/login.dart';
-import 'package:fall_detection_v2/beranda_page.dart';
-import 'package:fall_detection_v2/index.dart';
-import 'package:fall_detection_v2/index_unauthenticated.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreenPage extends StatefulWidget{
   @override
@@ -13,17 +12,31 @@ class SplashScreenPage extends StatefulWidget{
 }
 
 class _SplashScreenPageState extends State<SplashScreenPage> {
+  bool isAuth = false;
+  void _checkIfLoggedIn() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var token = localStorage.getString('token');
+    var user_storage = localStorage.getString('user');
+    if (token != null&&user_storage!=null) {
+      setState(() {
+        isAuth = true;
+      });
+    }
+  }
   @override
   void initState(){
     super.initState();
+    _checkIfLoggedIn();
     startSpashScreen();
   }
+
   startSpashScreen() async {
     var duration = const Duration(seconds: 5);
     return Timer(duration, (){
       Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_){
-            return Login();
+            // return isAuth == true ? Beranda() : Login();
+            return Beranda();
           })
       );
     });

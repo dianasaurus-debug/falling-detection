@@ -6,16 +6,27 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sensors/sensors.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class BerandaPage extends StatefulWidget {
   @override
   _BerandaPageState createState() => _BerandaPageState();
 }
 
 class _BerandaPageState extends State<BerandaPage> {
+  bool isAuth = false;
+  void _checkIfLoggedIn() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var token = localStorage.getString('token');
+    if (token != null) {
+      setState(() {
+        isAuth = true;
+      });
+    }
+  }
   @override
   void initState() {
-    // TODO: implement initState
-
+    _checkIfLoggedIn();
   }
 
   Widget build(BuildContext context) {
@@ -28,47 +39,53 @@ class _BerandaPageState extends State<BerandaPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                              image: AssetImage('images/leon.jpg'),
-                              fit: BoxFit.fill),
+                      if (isAuth == true) ...[
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                                image: AssetImage('images/leon.jpg'),
+                                fit: BoxFit.fill),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 10),
-                      Padding(
-                          padding: EdgeInsets.only(left: 0),
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Halo, Faisal Habib Rozaqqi!',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'faisal@gmail.com',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 13),
-                                ),
-                                SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Icon(CupertinoIcons.location, size: 13),
-                                    Text('Gebang Putih, Sukolilo Surabaya',
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold))
-                                  ],
-                                ),
-                              ]))
+                        SizedBox(width: 10),
+                        Padding(
+                            padding: EdgeInsets.only(left: 0),
+                            child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Halo, Faisal Habib Rozaqqi!',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'faisal@gmail.com',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 13),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Icon(CupertinoIcons.location, size: 13),
+                                      Text('Gebang Putih, Sukolilo Surabaya',
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold))
+                                    ],
+                                  ),
+                                ]))
+                      ] else ...[
+                        Text('Login'),
+                        Text('  |  '),
+                        Text('Daftar')
+                      ],
                     ],
                   ),
                   SizedBox(height: 20),

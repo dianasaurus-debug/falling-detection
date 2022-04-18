@@ -1,8 +1,12 @@
 import 'dart:convert';
 
+import 'package:fall_detection_v2/Controllers/auth_controller.dart';
 import 'package:fall_detection_v2/beranda.dart';
+import 'package:fall_detection_v2/beranda_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Define a custom Form widget.
 class Login extends StatefulWidget {
@@ -15,11 +19,6 @@ class Login extends StatefulWidget {
 // Define a corresponding State class.
 // This class holds data related to the form.
 class LoginState extends State<Login> {
-  // Create a global key that uniquely identifies the Form widget
-  // and allows validation of the form.
-  //
-  // Note: This is a `GlobalKey<FormState>`,
-  // not a GlobalKey<LoginState>.
   var email;
   var password;
   bool _isLoading = false;
@@ -165,5 +164,49 @@ class LoginState extends State<Login> {
                       ))))
 
     );
+  }
+  void _login() async{
+    setState(() {
+      _isLoading = true;
+    });
+    var data = {
+      'email' : email,
+      'password' : password,
+    };
+
+    var res = await AuthController().authData(data, '/login');
+    var body = json.decode(res.body);
+    if(body['success']){
+      SharedPreferences localStorage = await SharedPreferences.getInstance();
+      localStorage.setString('token', json.encode(body['access_token'])); //Simpan token di local storage
+      localStorage.setString('user', json.encode(body['data']));
+      Navigator.push(
+        context,
+        new MaterialPageRoute(
+            builder: (context) => BerandaPage()
+        ),
+      );
+    }else{
+      Alert(
+        context: context,
+        type: AlertType.error,
+        title: "Gagal Login!",
+        desc: "Pastikan E-Mail dan password benar.",
+        buttons: [
+          DialogButton(
+            child: const Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.pop(context),
+            width: 120,
+          )
+        ],
+      ).show();
+    }
+    setState(() {
+      _isLoading = false;
+    });
+
   }
 }
