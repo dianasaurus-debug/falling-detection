@@ -12,7 +12,7 @@ class AuthController {
 
   _getToken() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
-    token = jsonDecode(localStorage.getString('token'));
+    token = jsonDecode(localStorage.getString('token') ?? "");
   }
 
   Future<User> getProfile() async {
