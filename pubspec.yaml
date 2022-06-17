@@ -47,9 +47,8 @@ dependencies:
   url_launcher: ^6.1.2
   rflutter_alert: ^2.0.4
   contacts_service: ^0.6.3
-  overlay_support: ^1.2.1
-  get: ^4.6.5
-  shared_preferences_android: 2.0.10
+  audioplayers: ^0.20.1
+  vibration: ^1.7.3
 
 dev_dependencies:
   flutter_test:
