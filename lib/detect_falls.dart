@@ -23,9 +23,9 @@ class _DetectFallsState extends State<DetectFalls> {
     futureAllAccelerometerData = SensorController().getAllAccelerometerValues();
   }
 
-  String checkFallOrNot(arr_accel, length){
+  String checkFallOrNot(arr_accel, int length){
     int n = length;
-    int nilai_awal = 0;
+    int? nilai_awal = 0;
     if(n!=199){
       nilai_awal = length-199;
     }

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:fall_detection_v2/Controllers/auth_controller.dart';
+import 'package:fall_detection_v2/Screens/beranda.dart';
 import 'package:fall_detection_v2/Screens/register.dart';
-import 'package:fall_detection_v2/beranda.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -189,6 +189,7 @@ class LoginState extends State<Login> {
 
     var res = await AuthController().authData(data, '/login');
     var body = json.decode(res.body);
+    print(res.body);
     if(body['success']){
       SharedPreferences localStorage = await SharedPreferences.getInstance();
       localStorage.setString('token', json.encode(body['access_token'])); //Simpan token di local storage

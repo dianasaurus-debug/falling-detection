@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:fall_detection_v2/Controllers/auth_controller.dart';
+import 'package:fall_detection_v2/Controllers/contact_controller.dart';
+import 'package:fall_detection_v2/Models/contact.dart';
 import 'package:fall_detection_v2/Screens/login.dart';
 import 'package:fall_detection_v2/Screens/register.dart';
 import 'package:fall_detection_v2/Widgets/bottom_bar.dart';
@@ -12,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:location/location.dart' as LocationManager;
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,11 +26,13 @@ class Beranda extends StatefulWidget {
 class _BerandaState extends State<Beranda> {
   bool isAuth = false;
   var user = null;
+  late Future<List<ContactModel>> futureListContact;
   void _checkIfLoggedIn() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     var token = localStorage.getString('token');
     var user_storage = localStorage.getString('user');
     if (token != null&&user_storage!=null) {
+      futureListContact = ContactController().getContacts() as Future<List<ContactModel>>;
       setState(() {
         isAuth = true;
         user=jsonDecode(user_storage);
@@ -38,7 +42,6 @@ class _BerandaState extends State<Beranda> {
 
   final _formKey = GlobalKey<FormState>();
   final Map<String, Marker> _markers = {};
-  AudioPlayer player = AudioPlayer();
 
   late LatLng myPosition;
   late bool _serviceEnabled;
@@ -106,8 +109,9 @@ class _BerandaState extends State<Beranda> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _locateMe();
     _checkIfLoggedIn();
+    _locateMe();
+
   }
   @override
   Widget build(BuildContext context) {
@@ -117,6 +121,7 @@ class _BerandaState extends State<Beranda> {
           padding: EdgeInsets.fromLTRB(10, MediaQuery.of(context).size.height*(0.1), 10, 20),
           child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -258,78 +263,39 @@ class _BerandaState extends State<Beranda> {
                       Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children :[
-                            Text('Keluarga Dekat', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                            Text('Kontak Darurat', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                             SizedBox(height: 13),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Column(
-                                  children: [
-                                    Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                            image: AssetImage('images/leon.jpg'),
-                                            fit: BoxFit.fill),
-                                      ),
-                                    ),
-                                    SizedBox(height: 3),
-                                    Text('Ayah', style: TextStyle(color: Colors.black, fontSize : 12),)
-                                  ],
-                                ),
-                                Column(
-                                  children: [
-                                    Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                            image: AssetImage('images/leon.jpg'),
-                                            fit: BoxFit.fill),
-                                      ),
-                                    ),
-                                    SizedBox(height: 3),
-                                    Text('Ibu', style: TextStyle(color: Colors.black, fontSize : 12),)
-                                  ],
-                                ),
-                                Column(
-                                  children: [
-                                    Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                            image: AssetImage('images/leon.jpg'),
-                                            fit: BoxFit.fill),
-                                      ),
-                                    ),
-                                    SizedBox(height: 3),
-                                    Text('Adek', style: TextStyle(color: Colors.black, fontSize : 12),)
-                                  ],
-                                ),
-                                Column(
-                                  children: [
-                                    Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                            image: AssetImage('images/leon.jpg'),
-                                            fit: BoxFit.fill),
-                                      ),
-                                    ),
-                                    SizedBox(height: 3),
-                                    Text('Paman', style: TextStyle(color: Colors.black, fontSize : 12),)
-                                  ],
-                                ),
+                            FutureBuilder<List<ContactModel>>(
+                              future: futureListContact,
+                              builder: (context, contactData) {
+                                if (contactData.hasData)
+                                {
+                                  return SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: contactData.data!
+                                            .map((contact) => Container(
+                                          margin : EdgeInsets.only(right : 10),
+                                          child: Column(
+                                            children: [
+                                              CircleAvatar(child: Text(contact.name.substring(0, 1))),
+                                              SizedBox(height: 3),
+                                              Text('${contact.name}', style: TextStyle(color: Colors.black, fontSize : 12),)
+                                            ],
+                                          ),
+                                        )).toList()));
+                                } else if (contactData.hasError) {
+                                  return Text('${contactData.error}');
+                                }
+                                // By default, show a loading spinner.
+                                return Center(
+                                    child: CircularProgressIndicator(
+                                      backgroundColor: Colors.green,
+                                    ));
 
-                              ],
-                            ),
+                              },
+                            )
                           ]
                       ),
                 ],
@@ -340,9 +306,7 @@ class _BerandaState extends State<Beranda> {
                     style: TextStyle(fontSize: 20.0),
                   ),
                   onPressed: () {
-                    Route route = MaterialPageRoute(
-                        builder: (context) => TestingSensor());
-                    Navigator.push(context, route);
+                    _send_message();
                   },
                 ),
                 SizedBox(height: 10),
@@ -369,5 +333,28 @@ class _BerandaState extends State<Beranda> {
       ),
       bottomNavigationBar: BottomNavbar(current : 0),
     );
+  }
+  void _send_message() async{
+    print('pressed!');
+    var data = {
+      'phone' : '6283162937284',
+      'latitude' : _lat,
+      'longitude' : _lng,
+      'nama_lokasi' : 'Tempat jatuh',
+      'detail_lokasi' : 'Jln Ah yani'
+    };
+
+    var res = await AuthController().postData(data, '/send/whatsapp');
+    var body = json.decode(res.body);
+    print(res.body);
+    if(body['success']){
+      print(body['message']);
+      print('sukses!');
+    }else{
+      print(body['message']);
+      print('gagal!');
+    }
+
+
   }
 }

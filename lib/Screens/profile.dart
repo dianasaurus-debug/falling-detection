@@ -8,7 +8,6 @@ import 'package:fall_detection_v2/Screens/login.dart';
 import 'package:fall_detection_v2/Widgets/bottom_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sensors/sensors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

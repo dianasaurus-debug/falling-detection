@@ -1,39 +1,86 @@
 // @dart=2.9
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 // import 'dart:typed_data';
 // import 'dart:convert' as convert;
 // import 'dart:convert';
 
-import 'package:fall_detection_v2/Models/accelerometer.dart';
+import 'package:fall_detection_v2/Controllers/auth_controller.dart';
+import 'package:fall_detection_v2/Models/contact.dart';
 import 'package:fall_detection_v2/Screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:sensors/sensors.dart';
+import 'package:fall_detection_v2/Utils/disposable_widget.dart';
+import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:overlay_support/overlay_support.dart';
+import 'package:location/location.dart';
+import 'package:location/location.dart' as LocationManager;
+import 'package:shared_preferences/shared_preferences.dart';
 
-// import 'package:fall_detection_v2/Models/gyrometer.dart';
-// import 'package:flutter/services.dart';
-// import 'package:audioplayers/audioplayers.dart';
-
+import 'Controllers/contact_controller.dart';
 import 'Utils/constants.dart';
 
 // import 'package:http/http.dart' as http;
+LatLng myPosition;
+bool _serviceEnabled;
+PermissionStatus _permissionGranted;
+LocationManager.Location location = new LocationManager.Location();
+StreamSubscription accel;
+double _lat = -7.317463;
+double _lng = 111.761466;
+CameraPosition _currentPosition = CameraPosition(
+  target: LatLng(_lat, _lng),
+  zoom: 12,
+);
+
+Completer<GoogleMapController> _controller = Completer();
+var isAuth = false;
+var user = null;
+
+_locateMe() async {
+  _serviceEnabled = await location.serviceEnabled();
+  if (!_serviceEnabled) {
+    _serviceEnabled = await location.requestService();
+    if (!_serviceEnabled) {
+      return;
+    }
+  }
+
+  _permissionGranted = await location.hasPermission();
+  if (_permissionGranted == LocationManager.PermissionStatus.denied) {
+    _permissionGranted = await location.requestPermission();
+    if (_permissionGranted != LocationManager.PermissionStatus.granted) {
+      return;
+    }
+  }
+  await location.getLocation().then((res) async {
+    final GoogleMapController controller = await _controller.future;
+    _lat = res.latitude;
+    _lng = res.longitude;
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // FlutterBackgroundService.initialize(onStart);
-  await Firebase.initializeApp();
-
+  FlutterBackgroundService.initialize(onStart);
+  _locateMe();
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Splash Screen',
-      home: SplashScreenPage(),
-      theme: ThemeData(
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: Colors.white,
+    OverlaySupport.global(
+      child: GetMaterialApp(
+        theme: ThemeData(
+          fontFamily: 'Poppins',
+          scaffoldBackgroundColor: Colors.white,
+        ),
+        home: SplashScreenPage(),
+        title: 'Fall Detection',
+        debugShowCheckedModeBanner: false,
       ),
     ),
   );
@@ -43,209 +90,81 @@ void onStart() {
   WidgetsFlutterBinding.ensureInitialized();
   final service = FlutterBackgroundService();
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
-
-  // List<List<dynamic>> rows = <List<dynamic>>[];
-  // const String URL = "https://script.google.com/macros/s/AKfycbzge5uO8rlaDrSHAxXd3qUTPtbAYiykh3XTO0n_yDVW86igQHn731NfgoVu4ujz01qK/exec";
-  // const STATUS_SUCCESS = "SUCCESS";
-  // void submitForm(List<Accelerometer> accelerometer, List<Gyrometer> gyrometer, void Function(String) callback) async {
-  //   var jsonDataAccelerometer = accelerometer.map((e) => e.toJson()).toList();
-  //   var jsonDataGyro= gyrometer.map((e) => e.toJson()).toList();
-  //   var jsonAll = {
-  //     'accelerometer' : jsonDataAccelerometer,
-  //     'gyroscope' : jsonDataGyro
-  //   };
-  //   try {
-  //     await http.post(Uri.parse(URL), body: json.encode(jsonAll)).then((response) async {
-  //       service.sendData(
-  //           {"status_data":"PROSES DIRECORD!"}
-  //       );
-  //       if (response.statusCode == 302) {
-  //         var url = response.headers['location'];
-  //           await http.get(Uri.parse(url!)).then((response) {
-  //             callback(convert.jsonDecode(response.body).toString());
-  //             print(jsonDecode(response.body));
-  //             service.sendData(
-  //                 {"status_data":"SELESAI DIRECORD!"}
-  //             );
-  //           }
-  //         );
-  //       } else {
-  //         callback(convert.jsonDecode(response.body).toString());
-  //         print(jsonDecode(response.body));
-  //         service.sendData(
-  //             {"status_data":"GAGAL DIRECORD!"}
-  //         );
-  //       }
-  //     });
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
-  List<Accelerometer> accelerometer = [];
-  List<double> accelerometerValues = [];
-  // AudioPlayer player = AudioPlayer();
-
-  // List<Gyrometer> gyroscope = [];
-  // Timer _timer;
-  int _start = 2;
-
-  // double getMax(arr) {
-  //   var newarr = arr.sort();
-  //   return newarr.last();
-  // }
-
-  // double getMin(arr) {
-  //   var newarr = arr.sort();
-  //   return newarr.first();
-  // }
-
-  bool checkFallOrNot(arrAccel) {
-    int n = arrAccel.length;
-
-    for (int i = 0; i < n; i++) {
-      if (arrAccel[i] < LOW_THRESHOLD_ACCELEROMETER) {
-        for (int j = i + 1; j < n; j++) {
-          return arrAccel[j] > HIGH_THRESHOLD_ACCELEROMETER;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  // bool longlieDetection(arr_accel) {
-  //   var min_value = getMin(arr_accel);
-  //   var max_value = getMax(arr_accel);
-  //   if (min_value >= LOW_LONGLIE_ACCELEROMETER &&
-  //       max_value <= HIGH_LONGLIE_ACCELEROMETER) {
-  //     return true;
-  //   }
-  //   return false;
-  // }
-
-  // void ringtone_play() async {
-  //   String audioasset = "audios/ringtone2.mp3";
-  //   ByteData bytes = await rootBundle.load(audioasset); //load sound from assets
-  //   Uint8List soundbytes =
-  //       bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
-  //   int result = await player.playBytes(soundbytes);
-  //   if (result == 1) {
-  //     //play success
-  //     print("Sound playing successful.");
-  //   } else {
-  //     print("Error while playing sound.");
-  //   }
-  // }
-
-  // void showAlert(BuildContext context) {
-  //   showDialog(
-  //       context: context,
-  //       builder: (context) => AlertDialog(
-  //             content: Text("Anda jatuh!"),
-  //           ));
-  // }
-
-  void startTimer(double value) {
-    const oneSec = Duration(seconds: 1);
-
-    Timer.periodic(
-      oneSec,
-      (Timer timer) {
-        if (_start == 0) {
-          timer.cancel();
-          print("NGECANCEL TIMER value $accelerometerValues");
-          if (accelerometerValues.length > 0) {
-            if (checkFallOrNot(accelerometerValues)) {
-              for (StreamSubscription<dynamic> subscription
-                  in _streamSubscriptions) {
-                if (!(subscription.isPaused ?? true)) {
-                  subscription.pause();
-                  Timer(Duration(seconds: 5), () {
-                    service.sendData({
-                      "jatuh_label": 'Kamu Jatuh!',
-                    });
-                  });
-                }
-              }
-              // Timer(Duration(seconds: 5), () {
-              //   ringtone_play();
-              // });
-            } else {
-              Timer(Duration(seconds: 5), () {
-                service.sendData({"is_fall": 'Tidak'});
-                // ringtone_play();
-              });
-            }
-          }
-          accelerometerValues = [];
-          _start = 2;
-        } else {
-          accelerometerValues.add(value);
-          _start--;
-        }
-      },
-    );
-  }
+  String status = "Status";
+  final timestamp = DateTime.now().millisecondsSinceEpoch;
+  accelerometerEvents.listen((event) => {});
 
   if (_streamSubscriptions.length == 0) {
     _streamSubscriptions
-        .add(accelerometerEvents.listen((AccelerometerEvent event) {
-      var amplitudeSum = pow(event.x, 2) + pow(event.y, 2) + pow(event.z, 2);
-      startTimer(sqrt(amplitudeSum));
-      service.sendData({
-        "accel_i": accelerometer.length.toString(),
-        "acc_x": event.x,
-        "acc_y": event.y,
-        "acc_z": event.z,
-        "amplitude": sqrt(amplitudeSum),
-        "time": null
-      });
-      // accelerometer.add(new Accelerometer(event.x.toString(), event.y.toString(), event.z.toString()));
-    }));
+        .add(accel = accelerometerEvents.listen((AccelerometerEvent event) {
+      final data = event;
+      final x = data?.x ?? 0;
+      final y = data?.y ?? 0;
+      final z = data?.z ?? 0;
+      final gx = x / 9.80665;
+      final gy = y / 9.80665;
+      final gz = z / 9.80665;
+      var gForce = sqrt(pow(gx, 2) + pow(gy, 2) + pow(gz, 2));
+      const gravityThreshold = 2.7;
+      var i = 0;
+      if (gForce > gravityThreshold) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        const delay = 1000;
+        if (timestamp + delay < now) {
+            ContactController().getContacts().then((contacts) {
+              for (ContactModel contact in contacts) {
+                String usedPhone =
+                    contact.phone.replaceFirst(RegExp(r'0'), '62');
+                Future.delayed(Duration(milliseconds: 3000), () {
+                  _send_message(usedPhone);
+                });
+                i++;
+              }
+              _add_to_history();
+            });
+        }
 
-    _streamSubscriptions.add(gyroscopeEvents.listen((GyroscopeEvent event) {
-      // omega[j] = sqrt(pow(event.x,2)+pow(event.y,2)+pow(event.z,2));
-      // gyro_value = event;
-      service.sendData({
-        "gyro_i": accelerometer.length.toString(),
-        "gyro_x": event.x,
-        "gyro_y": event.y,
-        "gyro_z": event.z,
-        // "amplitude" : sqrt(omega[j]),
-      });
-      // j = (j+1)%1000000;
-      // gyroscope.add(new Gyrometer(event.x.toString(), event.y.toString(), event.z.toString()));
+      }
+
     }));
   }
-  service.onDataReceived.listen((event) {
-    if (event["action"] == "stopService") {
-      print('stopped');
-      // submitForm(accelerometer, gyroscope, (response) {
-      //   print("Response: $response");
-      // });
-      for (StreamSubscription<dynamic> subscription in _streamSubscriptions) {
-        if (!(subscription.isPaused ?? true)) {
-          subscription.pause();
-        }
-      }
-      // service.stopBackgroundService();
-    } else if (event["action"] == "restartService") {
-      FlutterBackgroundService.initialize(onStart);
-      print('restarted');
-      // i=0;
-      // k=0;
-      accelerometer = [];
-      // gyroscope = [];
-      for (StreamSubscription<dynamic> subscription in _streamSubscriptions) {
-        if ((subscription.isPaused)) {
-          subscription.resume();
-        }
-      }
-    }
-  });
+}
 
-  // service.sendData(
-  //   {"current_date": DateTime.now().toIso8601String()},
-  // );
-  // });
+void _send_message(phone) async {
+  var data = {
+    'phone': phone,
+    'latitude': _lat,
+    'longitude': _lng,
+    'nama_lokasi': 'Tempat jatuh',
+    'detail_lokasi': 'Jln Ah yani'
+  };
+
+  var res = await AuthController().postData(data, '/send/whatsapp');
+  // var body = json.decode(res.body);
+  print('send_message : ');
+  print(res.body);
+  // if(body['success']){
+  //  print(body['message']);
+  //  print('sukses!');
+  // }else{
+  //   print(body['message']);
+  //   print('gagal!');
+  // }
+}
+
+void _add_to_history() async {
+  var data = {
+    'latitude': _lat,
+    'longitude': _lng,
+  };
+
+  var res = await AuthController().postData(data, '/history/create');
+  var body = json.decode(res.body);
+  // if(body['success']){
+  //   print(body['message']);
+  //   print('sukses!');
+  // }else{
+  //   print(body['message']);
+  //   print('gagal!');
+  // }
 }
