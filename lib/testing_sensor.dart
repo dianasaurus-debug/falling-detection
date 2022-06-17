@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:fall_detection_v2/Utils/constants.dart';
 import 'package:fall_detection_v2/Utils/disposable_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:vibration/vibration.dart';
 
 class TestingSensor extends StatefulWidget {
   @override
@@ -82,6 +84,7 @@ class _TestingSensorState extends State<TestingSensor> with DisposableWidget {
                           );
                         },
                       );
+                      Vibration.vibrate(duration: 2000);
                     }
                   }
 
