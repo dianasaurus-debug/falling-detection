@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fall_detection_v2/Controllers/auth_controller.dart';
 import 'package:fall_detection_v2/Screens/beranda.dart';
 import 'package:fall_detection_v2/Screens/register.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -22,10 +23,21 @@ class LoginState extends State<Login> {
 
   var email;
   var password;
+  var fcm_token;
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  late FirebaseMessaging messaging;
 
+  @override
+  void initState() {
+    messaging = FirebaseMessaging.instance;
+    messaging.getToken().then((value) {
+      setState(() {
+        fcm_token = value;
+      });
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final ButtonStyle styleLogin = ElevatedButton.styleFrom(
@@ -183,6 +195,7 @@ class LoginState extends State<Login> {
       _isLoading = true;
     });
     var data = {
+      'fcm_token' : fcm_token,
       'email' : email,
       'password' : password,
     };

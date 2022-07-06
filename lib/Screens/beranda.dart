@@ -7,15 +7,20 @@ import 'package:fall_detection_v2/Controllers/auth_controller.dart';
 import 'package:fall_detection_v2/Controllers/contact_controller.dart';
 import 'package:fall_detection_v2/Models/contact.dart';
 import 'package:fall_detection_v2/Screens/login.dart';
+import 'package:fall_detection_v2/Screens/notifikasi_list.dart';
 import 'package:fall_detection_v2/Screens/register.dart';
 import 'package:fall_detection_v2/Widgets/bottom_bar.dart';
 import 'package:fall_detection_v2/testing_sensor.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:location/location.dart' as LocationManager;
 import 'package:flutter/services.dart';
+import 'package:overlay_support/overlay_support.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Beranda extends StatefulWidget {
@@ -41,11 +46,18 @@ class _BerandaState extends State<Beranda> {
   }
 
   final _formKey = GlobalKey<FormState>();
+
+  var phone;
+  var name;
+  var role;
+  var _isLoading = false;
   final Map<String, Marker> _markers = {};
+  late FirebaseMessaging messaging;
 
   late LatLng myPosition;
   late bool _serviceEnabled;
   late PermissionStatus _permissionGranted;
+  String recentAddress = '';
   LocationManager.Location location = new LocationManager.Location();
   double _lat = -7.317463;
   double _lng = 111.761466;
@@ -55,6 +67,24 @@ class _BerandaState extends State<Beranda> {
   );
 
   Completer<GoogleMapController> _controller = Completer();
+  void _getPlace(double latitude, double longitude) async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+
+    // this is all you need
+    Placemark placeMark  = placemarks[0];
+    String? name = placeMark.name;
+    String? subLocality = placeMark.subLocality;
+    String? locality = placeMark.locality;
+    String? administrativeArea = placeMark.administrativeArea;
+    String? postalCode = placeMark.postalCode;
+    String? country = placeMark.country;
+    String address = "${name}, ${subLocality}, ${locality}, ${administrativeArea} ${postalCode}, ${country}";
+
+    setState(() {
+      recentAddress = address; // update _address
+    });
+    print(recentAddress);
+  }
   _locateMe() async {
     _serviceEnabled = await location.serviceEnabled();
     if (!_serviceEnabled) {
@@ -78,8 +108,8 @@ class _BerandaState extends State<Beranda> {
         zoom: 12,
       );
       controller.moveCamera(CameraUpdate.newLatLngZoom(LatLng(res.latitude!, res.longitude!), 12));
-      //
-      // controller.animateCamera(CameraUpdate.newCameraPosition(_position));
+
+
       setState(() {
         _currentPosition = CameraPosition(
           target: LatLng(res.latitude!, res.longitude!),
@@ -92,6 +122,7 @@ class _BerandaState extends State<Beranda> {
   }
   Future<void> _onMapCreated(GoogleMapController controller) async {
     _controller.complete(controller);
+    // _getPlace(_lat, _lng);
     setState(() {
       _markers['Lokasi saya'] = Marker(
         markerId: MarkerId('Lokasi saya'),
@@ -111,14 +142,30 @@ class _BerandaState extends State<Beranda> {
     super.initState();
     _checkIfLoggedIn();
     _locateMe();
+    messaging = FirebaseMessaging.instance;
+    messaging.getToken().then((value) {
+      print(value);
+    });
+    FirebaseMessaging.onMessage.listen((RemoteMessage event) {
+      showSimpleNotification(
+        Text(event.notification!.title!, style:TextStyle(fontSize: 15, color: Colors.indigo)),
+        subtitle: Text(event.notification!.body!, style:TextStyle(fontSize: 13, color: Colors.black)),
+        background: Colors.white,
+        duration: Duration(seconds: 20),
+      );
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      Route route = MaterialPageRoute(
+          builder: (context) => NotifikasiPage());
+      Navigator.push(context, route);
+    });
 
   }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(10, MediaQuery.of(context).size.height*(0.1), 10, 20),
+          padding: EdgeInsets.fromLTRB(10, MediaQuery.of(context).size.height*(0.05), 10, 20),
           child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +180,7 @@ class _BerandaState extends State<Beranda> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           image: DecorationImage(
-                              image: AssetImage('images/leon.jpg'),
+                              image: AssetImage('images/icon_profile.png'),
                               fit: BoxFit.fill),
                         ),
                       ),
@@ -169,31 +216,23 @@ class _BerandaState extends State<Beranda> {
                                 ),
                               ]))
                     ] else ...[
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          textStyle: const TextStyle(fontSize: 15),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Login()),
-                          );
-                        },
-                        child: const Text('Login'),
-                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => Login()),
+                            );
+                          },
+                          child: const Text('Login')),
                       SizedBox(width: 10,),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          textStyle: const TextStyle(fontSize: 15),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Register()),
-                          );
-                        },
-                        child: const Text('Daftar'),
-                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => Register()),
+                            );
+                          },
+                          child: const Text('Daftar')),
                     ],
                   ],
                 ),
@@ -270,21 +309,29 @@ class _BerandaState extends State<Beranda> {
                               builder: (context, contactData) {
                                 if (contactData.hasData)
                                 {
-                                  return SingleChildScrollView(
+                                  return contactData.data!.length > 0 ?
+                                   SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
                                     child: Row(
                                         mainAxisAlignment: MainAxisAlignment.start,
                                         children: contactData.data!
                                             .map((contact) => Container(
                                           margin : EdgeInsets.only(right : 10),
-                                          child: Column(
-                                            children: [
-                                              CircleAvatar(child: Text(contact.name.substring(0, 1))),
-                                              SizedBox(height: 3),
-                                              Text('${contact.name}', style: TextStyle(color: Colors.black, fontSize : 12),)
-                                            ],
-                                          ),
-                                        )).toList()));
+                                          child:
+                                          GestureDetector(
+                                            child: Column(
+                                              children: [
+                                                CircleAvatar(child: Text(contact.name.substring(0, 1))),
+                                                SizedBox(height: 3),
+                                                Text('${contact.name}', style: TextStyle(color: Colors.black, fontSize : 12),)
+                                              ],
+                                            ),
+                                            onTap: () {
+                                              detailContact(contact);
+                                            },
+                                        ),
+
+                                        )).toList())) : Text('Tidak ada data kontak');
                                 } else if (contactData.hasError) {
                                   return Text('${contactData.error}');
                                 }
@@ -300,15 +347,15 @@ class _BerandaState extends State<Beranda> {
                       ),
                 ],
                 SizedBox(height: 10),
-                RaisedButton(
-                  child: Text(
-                    'Tes Sensor',
-                    style: TextStyle(fontSize: 20.0),
-                  ),
-                  onPressed: () {
-                    _send_message();
-                  },
-                ),
+                // RaisedButton(
+                //   child: Text(
+                //     'Tes Sensor',
+                //     style: TextStyle(fontSize: 20.0),
+                //   ),
+                //   onPressed: () {
+                //     _send_message();
+                //   },
+                // ),
                 SizedBox(height: 10),
                 Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,4 +404,190 @@ class _BerandaState extends State<Beranda> {
 
 
   }
+  void addContact(id) async {
+    _isLoading = true;
+    var data = {'name': name, 'phone': phone, 'role': role};
+    print(data);
+    var  res = await AuthController().postData(data, '/contact/update/${id}');
+    var body = json.decode(res.body);
+    print(body);
+    if (body['success'] == true) {
+      _isLoading = false;
+      Alert(
+        context: context,
+        type: AlertType.success,
+        title: "Berhasil menyimpan kontak!",
+        buttons: [
+          DialogButton(
+            child: const Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.push(
+              context,
+              new MaterialPageRoute(builder: (context) => Beranda()),
+            ),
+            width: 120,
+          )
+        ],
+      ).show();
+    } else {
+      _isLoading = false;
+      Alert(
+        context: context,
+        type: AlertType.error,
+        title: "Gagal menyimpan kontak!",
+        desc: body['message'],
+        buttons: [
+          DialogButton(
+            child: const Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.pop(context),
+            width: 120,
+          )
+        ],
+      ).show();
+    }
+  }
+
+  void deleteContact(id) async {
+    var res = await AuthController().deleteData('/contact/delete/${id}');
+    var body = json.decode(res.body);
+    print(body);
+    if (body['success'] == true) {
+      Alert(
+        context: context,
+        type: AlertType.success,
+        title: "Berhasil menghapus kontak!",
+        buttons: [
+          DialogButton(
+            child: const Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.push(
+              context,
+              new MaterialPageRoute(builder: (context) => Beranda()),
+            ),
+            width: 120,
+          )
+        ],
+      ).show();
+    } else {
+      Alert(
+        context: context,
+        type: AlertType.error,
+        title: "Gagal menghapus kontak!",
+        desc: body['message'],
+        buttons: [
+          DialogButton(
+            child: const Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.pop(context),
+            width: 120,
+          )
+        ],
+      ).show();
+    }
+  }
+  void detailContact(ContactModel contact) {
+    setState(() {
+      name = contact.name;
+      role = contact.role;
+      phone = contact.phone;
+    });
+    Alert(
+      context: context,
+      title: "Kontak Darurat",
+      content: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              TextFormField(
+                initialValue: contact.name,
+                decoration: InputDecoration(
+                  labelStyle: TextStyle(fontSize: 12),
+                  labelText: 'Nama',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nama tidak boleh kosong';
+                  }
+                  setState(() {
+                    name = value;
+                  });
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: contact.phone,
+                enabled: false,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelStyle: TextStyle(fontSize: 12),
+                  labelText: 'Nomor Handphone',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Peran tidak boleh kosong';
+                  }
+                  setState(() {
+                    phone = value;
+                  });
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: contact.role,
+                decoration: InputDecoration(
+                  labelStyle: TextStyle(fontSize: 12),
+                  labelText: 'Peran (Ayah/Teman/Mama/dll)',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Peran tidak boleh kosong';
+                  }
+                  setState(() {
+                    role = value;
+                  });
+                  return null;
+                },
+              ),
+              Row(
+                  children  : [
+                    Expanded(
+                        child : DialogButton(child: Text('Hapus',style : TextStyle(color : Colors.white)),
+                            color : Colors.red,
+                            onPressed: (){
+                              deleteContact(contact.id);
+                            })
+                    ),SizedBox(width : 5),
+                    Expanded(
+                        child : DialogButton(
+                            child:Text(
+                                _isLoading ? 'Loading...' : 'Simpan',style : TextStyle(color : Colors.white)
+                            ),
+                            onPressed: (){
+                              if (_formKey.currentState!.validate()) {
+                                addContact(contact.id);
+                              }
+                            }
+                        )
+                    ),
+
+                  ]
+              )
+
+            ],
+          )),
+      buttons: [
+      ],
+    ).show();
+  }
+
+
 }

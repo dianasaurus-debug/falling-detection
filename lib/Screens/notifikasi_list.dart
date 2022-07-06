@@ -6,8 +6,10 @@ import 'package:fall_detection_v2/Models/history.dart';
 import 'package:fall_detection_v2/Models/notifikasi.dart';
 import 'package:fall_detection_v2/Screens/login.dart';
 import 'package:fall_detection_v2/Widgets/bottom_bar.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,9 +34,25 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       });
     }
   }
+  late FirebaseMessaging messaging;
+
   @override
   void initState() {
     _checkIfLoggedIn();
+    messaging = FirebaseMessaging.instance;
+    FirebaseMessaging.onMessage.listen((RemoteMessage event) {
+      showSimpleNotification(
+        Text(event.notification!.title!, style:TextStyle(fontSize: 16, color: Colors.indigo)),
+        subtitle: Text(event.notification!.body!, style:TextStyle(fontSize: 13, color: Colors.black)),
+        background: Colors.white,
+        duration: Duration(seconds: 20),
+      );
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      Route route = MaterialPageRoute(
+          builder: (context) => NotifikasiPage());
+      Navigator.push(context, route);
+    });
   }
   List<NotificationModel> notifikasi_list = [
     new NotificationModel(1, 'Notifikasi test 1', 'Detail notifikasi'),

@@ -12,21 +12,23 @@ import 'package:fall_detection_v2/Controllers/auth_controller.dart';
 import 'package:fall_detection_v2/Models/contact.dart';
 import 'package:fall_detection_v2/Screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fall_detection_v2/Utils/disposable_widget.dart';
-import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:overlay_support/overlay_support.dart';
 import 'package:location/location.dart';
 import 'package:location/location.dart' as LocationManager;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vibration/vibration.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 import 'Controllers/contact_controller.dart';
 import 'Utils/constants.dart';
-
+Future<void> _messageHandler(RemoteMessage message) async {
+  print('background message ${message.notification.body}');
+}
 // import 'package:http/http.dart' as http;
 LatLng myPosition;
 bool _serviceEnabled;
@@ -70,19 +72,23 @@ _locateMe() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterBackgroundService.initialize(onStart);
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_messageHandler);
   _locateMe();
+
   runApp(
-    OverlaySupport.global(
-      child: GetMaterialApp(
-        theme: ThemeData(
-          fontFamily: 'Poppins',
-          scaffoldBackgroundColor: Colors.white,
-        ),
-        home: SplashScreenPage(),
-        title: 'Fall Detection',
-        debugShowCheckedModeBanner: false,
+      OverlaySupport(
+        child:
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Human Fall Detection',
+      home: SplashScreenPage(),
+      theme: ThemeData(
+        fontFamily: 'Poppins',
+        scaffoldBackgroundColor: Colors.white,
       ),
-    ),
+    )),
   );
 }
 
@@ -106,19 +112,18 @@ void onStart() {
       final gz = z / 9.80665;
       var gForce = sqrt(pow(gx, 2) + pow(gy, 2) + pow(gz, 2));
       const gravityThreshold = 2.7;
-      var i = 0;
       if (gForce > gravityThreshold) {
         final now = DateTime.now().millisecondsSinceEpoch;
         const delay = 1000;
         if (timestamp + delay < now) {
-            ContactController().getContacts().then((contacts) {
+          Vibration.vibrate(duration: 2000);
+          ContactController().getContacts().then((contacts) {
               for (ContactModel contact in contacts) {
-                String usedPhone =
-                    contact.phone.replaceFirst(RegExp(r'0'), '62');
+                String newString = contact.phone.replaceFirst(RegExp(r'0'), '62');
+                String usedPhone = newString.replaceAll(RegExp(r"\D"), "");
                 Future.delayed(Duration(milliseconds: 3000), () {
                   _send_message(usedPhone);
                 });
-                i++;
               }
               _add_to_history();
             });
@@ -160,6 +165,7 @@ void _add_to_history() async {
 
   var res = await AuthController().postData(data, '/history/create');
   var body = json.decode(res.body);
+  print(res.body);
   // if(body['success']){
   //   print(body['message']);
   //   print('sukses!');

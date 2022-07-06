@@ -15,7 +15,7 @@
         </intent>
     </queries>
     <application
-        android:label="fall_detection_v2"
+        android:label="Human Fall Detection"
         android:icon="@mipmap/ic_launcher">
        <meta-data
            android:name="com.google.android.geo.API_KEY"

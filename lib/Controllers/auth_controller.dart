@@ -5,7 +5,6 @@ import 'dart:convert';
 
 import 'package:fall_detection_v2/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 class AuthController {
   // ignore: prefer_typing_uninitialized_variables
   var token;
@@ -40,6 +39,15 @@ class AuthController {
     );
   }
 
+  deleteData(apiUrl) async {
+    var fullUrl = API_URL + apiUrl;
+    await _getToken();
+    return await http.delete(
+        Uri.parse(fullUrl),
+        headers: _setHeaders()
+    );
+  }
+
   authData(data, String apiUrl) async {
     var fullUrl = API_URL + apiUrl;
     return await http.post(
@@ -57,6 +65,8 @@ class AuthController {
         headers: _setHeaders()
     );
   }
+
+
 
    _setHeaders() => {
     'Content-type' : 'application/json',

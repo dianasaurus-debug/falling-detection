@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:fall_detection_v2/Controllers/auth_controller.dart';
 import 'package:fall_detection_v2/Screens/beranda.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
@@ -32,6 +33,7 @@ class RegisterState extends State<Register> {
   var phone;
   var name;
   var alamat;
+  var fcm_token;
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -39,6 +41,17 @@ class RegisterState extends State<Register> {
     const Gender('P', 'Perempuan'),
     const Gender('L', 'Laki-laki'),
   ];
+  late FirebaseMessaging messaging;
+
+  @override
+  void initState() {
+    messaging = FirebaseMessaging.instance;
+    messaging.getToken().then((value) {
+      setState(() {
+        fcm_token = value;
+      });
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final ButtonStyle styleLogin = ElevatedButton.styleFrom(
@@ -443,7 +456,8 @@ class RegisterState extends State<Register> {
       'gender' : gender,
       'password' : password,
       'phone' : phone,
-      'alamat' : alamat
+      'alamat' : alamat,
+      'fcm_token' : fcm_token
     };
     var res = await AuthController().authData(data, '/register');
     var body = json.decode(res.body);
